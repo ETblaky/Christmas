@@ -1,0 +1,8 @@
+name: Christmas
+main: me.etblaky.Christmas
+version: 1.0
+
+depend: [NoteBlockAPI]
+
+commands:
+  christmas:
