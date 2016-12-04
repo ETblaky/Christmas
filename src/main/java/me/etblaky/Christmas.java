@@ -1,42 +1,64 @@
 package me.etblaky;
 
-import com.xxmicloxx.NoteBlockAPI.NBSDecoder;
-import com.xxmicloxx.NoteBlockAPI.RadioSongPlayer;
-import com.xxmicloxx.NoteBlockAPI.SongDestroyingEvent;
-import com.xxmicloxx.NoteBlockAPI.SongPlayer;
+import com.xxmicloxx.NoteBlockAPI.*;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.SkullType;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Random;
 
 /**
  * Created by ETblaky on 03/12/2016.
  */
-public class Christmas extends JavaPlugin{
+public class Christmas extends JavaPlugin implements Listener {
+
+    public static Christmas instance;
+
+    public static SongPlayer sp;
 
     public ArrayList<String> subCmds = new ArrayList<String>();
-        public ArrayList<String> songs = new ArrayList<String>();
-        public HashMap<Player, Boolean> isSnowing = new HashMap<Player, Boolean>();
+        public static ArrayList<String> songs = new ArrayList<String>();
+        public static boolean isSnowing = false;
 
     public void onEnable(){
+
+        Bukkit.getPluginManager().registerEvents(this, this);
+        Bukkit.getPluginManager().registerEvents(new ChristmasGUI(), this);
+
+        instance = this;
+
         subCmds.add("song");
+        subCmds.add("head");
             songs.add("jingle_bell");
             songs.add("santa_town");
 
+        verifyConfigFile();
+        startSchedulers();
+
+        ChristmasGUI.setUp();
+
+    }
+
+    public void startSchedulers(){
         Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
             public void run() {
                 for(Player p : Bukkit.getOnlinePlayers()){
-                    if(isSnowing.get(p) != null &&isSnowing.get(p)){
+                    if(isSnowing){
                         for(int i = 0; i < 25; i++){
                             Random rand1 = new Random();
                             Random rand2 = new Random();
@@ -46,7 +68,14 @@ public class Christmas extends JavaPlugin{
                 }
             }
         }, 10, 10);
+    }
 
+    public void verifyConfigFile(){
+        try {
+            if (!getDataFolder().exists()) { getDataFolder().mkdirs(); }
+            File file = new File(getDataFolder(), "config.yml");
+            if (!file.exists()) { saveDefaultConfig(); }
+        } catch (Exception e) { e.printStackTrace(); }
     }
 
     @Override
@@ -58,18 +87,33 @@ public class Christmas extends JavaPlugin{
 
             if(args.length < 1) { sender.sendMessage(Arrays.toString(subCmds.toArray()).replace("[", "").replace("]", "")); return true; }
 
+            if(args[0].equalsIgnoreCase("head")){
+
+                ItemStack skull = new ItemStack(Material.SKULL_ITEM, 1, (short) SkullType.PLAYER.ordinal());
+
+                SkullMeta meta = (SkullMeta) skull.getItemMeta();
+                meta.setOwner("Santa");
+                meta.setDisplayName(ChatColor.DARK_RED + "Christmas Time!");
+                skull.setItemMeta(meta);
+                ((Player) sender).getInventory().addItem(skull);
+            }
+
             if(args[0].equalsIgnoreCase("song")){
                 if(args.length < 2) { sender.sendMessage(Arrays.toString(songs.toArray()).replace("[", "").replace("]", "")); return true; }
 
                 if(args[1].equalsIgnoreCase("jingle_bell")){
-                    SongPlayer sp = new RadioSongPlayer(NBSDecoder.parse(new File(getDataFolder(), "jingle_bell.nbs")));
+                    if(sp != null) { sp.destroy(SongDestroyingEvent.StopCause.MANUALLY_DESTROYED); }
+
+                    sp = new RadioSongPlayer(NBSDecoder.parse(new File(getDataFolder(), "jingle_bell.nbs")));
                     sp.setAutoDestroy(true);
                     for(Player p : Bukkit.getOnlinePlayers()){  sp.addPlayer(p); }
                     sp.setPlaying(true);
                 }
 
                 if(args[1].equalsIgnoreCase("santa_town")){
-                    SongPlayer sp = new RadioSongPlayer(NBSDecoder.parse(new File(getDataFolder(), "santaTown.nbs")));
+                    if(sp != null) { sp.destroy(SongDestroyingEvent.StopCause.MANUALLY_DESTROYED); }
+
+                    sp = new RadioSongPlayer(NBSDecoder.parse(new File(getDataFolder(), "santa_town.nbs")));
                     sp.setAutoDestroy(true);
                     for(Player p : Bukkit.getOnlinePlayers()){  sp.addPlayer(p); }
                     sp.setPlaying(true);
@@ -78,7 +122,7 @@ public class Christmas extends JavaPlugin{
             }
 
             if(args[0].equalsIgnoreCase("snow")){
-                isSnowing.put((Player) sender, isSnowing.get(sender) == null || !isSnowing.get(sender));
+                isSnowing = !isSnowing;
             }
 
         }
@@ -88,16 +132,40 @@ public class Christmas extends JavaPlugin{
 
     @EventHandler
     public void onSongFinishes(final SongDestroyingEvent e){
+        if(e.getStoppedCause().equals(SongDestroyingEvent.StopCause.MANUALLY_DESTROYED)) return;
+
         Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
             public void run() {
-                e.getSongPlayer().setPlaying(true);
+                SongPlayer sp = new RadioSongPlayer(e.getSongPlayer().getSong());
+                sp.setAutoDestroy(true);
+                for(Player p : Bukkit.getOnlinePlayers()){  sp.addPlayer(p); }
+                sp.setPlaying(true);
             }
         }, 5 * 20);
     }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent e){
-        isSnowing.put(e.getPlayer(), false);
+        if(this.getConfig().getBoolean("onlineOps") && !e.getPlayer().isOp()) return;
+
+        ItemStack skull = new ItemStack(Material.SKULL_ITEM, 1, (short) SkullType.PLAYER.ordinal());
+
+        SkullMeta meta = (SkullMeta) skull.getItemMeta();
+        meta.setOwner("Santa");
+        meta.setDisplayName(ChatColor.DARK_RED + "Christmas Time!");
+        skull.setItemMeta(meta);
+        e.getPlayer().getInventory().setItem(this.getConfig().getInt("Slot"), skull);
+    }
+
+    @EventHandler
+    public void onClickSantasHead(PlayerInteractEvent e){
+        if(e.getPlayer().getInventory().getItemInMainHand().getType() != Material.SKULL_ITEM) return;
+        if(e.getPlayer().getInventory().getItemInMainHand().getItemMeta().getDisplayName() == null) return;
+        if(!e.getPlayer().getInventory().getItemInMainHand().getItemMeta().getDisplayName().equals(ChatColor.DARK_RED + "Christmas Time!")) return;
+
+        e.getPlayer().openInventory(ChristmasGUI.mainInv);
+        e.setCancelled(true);
+
     }
 
 }
