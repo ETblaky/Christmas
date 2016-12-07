@@ -46,6 +46,7 @@ public class Christmas extends JavaPlugin implements Listener {
         subCmds.add("head");
             songs.add("jingle_bell");
             songs.add("santa_town");
+            songs.add("wish_merry");
 
         verifyConfigFile();
         startSchedulers();
@@ -88,7 +89,7 @@ public class Christmas extends JavaPlugin implements Listener {
             if(args.length < 1) { sender.sendMessage(Arrays.toString(subCmds.toArray()).replace("[", "").replace("]", "")); return true; }
 
             if(args[0].equalsIgnoreCase("head")){
-                if(sender.hasPermission("christmas.head")) { sender.sendMessage(ChatColor.RED + "Voçe não tem permissão para fazer isso!"); return true;}
+                if(!sender.hasPermission("christmas.head")) { sender.sendMessage(ChatColor.RED + "Você não tem permissão para fazer isso!"); return true;}
 
                 ItemStack skull = new ItemStack(Material.SKULL_ITEM, 1, (short) SkullType.PLAYER.ordinal());
 
@@ -100,24 +101,18 @@ public class Christmas extends JavaPlugin implements Listener {
             }
 
             if(args[0].equalsIgnoreCase("song")){
-                if(sender.hasPermission("christmas.song")) { sender.sendMessage(ChatColor.RED + "Voçe não tem permissão para fazer isso!"); return true;}
-                if(args.length < 2) { sender.sendMessage(Arrays.toString(songs.toArray()).replace("[", "").replace("]", "")); return true; }
+                System.out.println(sender.hasPermission("christmas.song"));
+                if(!sender.hasPermission("christmas.song")) { sender.sendMessage(ChatColor.RED + "Você não tem permissão para fazer isso!"); return true;}
+                if(args.length < 2 || (!songs.contains(args[1]) && !args[1].equalsIgnoreCase("stop"))) { sender.sendMessage(Arrays.toString(songs.toArray()).replace("[", "").replace("]", "")); return true; }
 
-                if(args[1].equalsIgnoreCase("jingle_bell")){
-                    if(sp != null) { sp.destroy(SongDestroyingEvent.StopCause.MANUALLY_DESTROYED); }
+                if(sp != null) { sp.destroy(SongDestroyingEvent.StopCause.MANUALLY_DESTROYED); }
 
-                    sp = new RadioSongPlayer(NBSDecoder.parse(new File(getDataFolder(), "jingle_bell.nbs")));
+                if(!args[1].equalsIgnoreCase("stop")) {
+                    sp = new RadioSongPlayer(NBSDecoder.parse(new File(getDataFolder(), args[1] + ".nbs")));
                     sp.setAutoDestroy(true);
-                    for(Player p : Bukkit.getOnlinePlayers()){  sp.addPlayer(p); }
-                    sp.setPlaying(true);
-                }
-
-                if(args[1].equalsIgnoreCase("santa_town")){
-                    if(sp != null) { sp.destroy(SongDestroyingEvent.StopCause.MANUALLY_DESTROYED); }
-
-                    sp = new RadioSongPlayer(NBSDecoder.parse(new File(getDataFolder(), "santa_town.nbs")));
-                    sp.setAutoDestroy(true);
-                    for(Player p : Bukkit.getOnlinePlayers()){  sp.addPlayer(p); }
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        sp.addPlayer(p);
+                    }
                     sp.setPlaying(true);
                 }
 
@@ -129,7 +124,7 @@ public class Christmas extends JavaPlugin implements Listener {
             }
 
             if(args[0].equalsIgnoreCase("snow")){
-                if(sender.hasPermission("christmas.snow")) { sender.sendMessage(ChatColor.RED + "Voçe não tem permissão para fazer isso!"); return true;}
+                if(!sender.hasPermission("christmas.snow")) { sender.sendMessage(ChatColor.RED + "Você não tem permissão para fazer isso!"); return true;}
                 isSnowing = !isSnowing;
             }
 
