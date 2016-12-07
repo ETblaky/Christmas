@@ -174,6 +174,8 @@ public class Christmas extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onClickSantasHead(PlayerInteractEvent e){
+        if(!e.getPlayer().hasPermission("christmas.head")) { e.getPlayer().sendMessage(ChatColor.RED + "Você não tem permissão para fazer isso!"); return;}
+
         if(e.getPlayer().getInventory().getItemInMainHand().getType() != Material.SKULL_ITEM) return;
         if(e.getPlayer().getInventory().getItemInMainHand().getItemMeta().getDisplayName() == null) return;
         if(!e.getPlayer().getInventory().getItemInMainHand().getItemMeta().getDisplayName().equals(ChatColor.DARK_RED + "Christmas Time!")) return;
