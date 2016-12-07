@@ -2,4 +2,4 @@
 Slot: 0
 
 #If only op's will recive the santa skull
-onlineOps: true
+onlyOps: true

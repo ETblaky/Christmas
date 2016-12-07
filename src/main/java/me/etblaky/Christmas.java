@@ -88,6 +88,7 @@ public class Christmas extends JavaPlugin implements Listener {
             if(args.length < 1) { sender.sendMessage(Arrays.toString(subCmds.toArray()).replace("[", "").replace("]", "")); return true; }
 
             if(args[0].equalsIgnoreCase("head")){
+                if(sender.hasPermission("christmas.head")) { sender.sendMessage(ChatColor.RED + "Voçe não tem permissão para fazer isso!"); return true;}
 
                 ItemStack skull = new ItemStack(Material.SKULL_ITEM, 1, (short) SkullType.PLAYER.ordinal());
 
@@ -99,6 +100,7 @@ public class Christmas extends JavaPlugin implements Listener {
             }
 
             if(args[0].equalsIgnoreCase("song")){
+                if(sender.hasPermission("christmas.song")) { sender.sendMessage(ChatColor.RED + "Voçe não tem permissão para fazer isso!"); return true;}
                 if(args.length < 2) { sender.sendMessage(Arrays.toString(songs.toArray()).replace("[", "").replace("]", "")); return true; }
 
                 if(args[1].equalsIgnoreCase("jingle_bell")){
@@ -119,9 +121,15 @@ public class Christmas extends JavaPlugin implements Listener {
                     sp.setPlaying(true);
                 }
 
+                if(args[1].equalsIgnoreCase("stop")){
+                    if(sp == null) { sp = new RadioSongPlayer(NBSDecoder.parse(new File(getDataFolder(), "empty.nbs"))); }
+                    sp.destroy(SongDestroyingEvent.StopCause.MANUALLY_DESTROYED);
+                }
+
             }
 
             if(args[0].equalsIgnoreCase("snow")){
+                if(sender.hasPermission("christmas.snow")) { sender.sendMessage(ChatColor.RED + "Voçe não tem permissão para fazer isso!"); return true;}
                 isSnowing = !isSnowing;
             }
 
