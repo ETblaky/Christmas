@@ -48,7 +48,7 @@ public class Christmas extends JavaPlugin implements Listener {
             songs.add("santa_town");
             songs.add("wish_merry");
 
-        verifyConfigFile();
+        verifyConfigFolder();
         startSchedulers();
 
         ChristmasGUI.setUp();
@@ -71,12 +71,24 @@ public class Christmas extends JavaPlugin implements Listener {
         }, 10, 10);
     }
 
-    public void verifyConfigFile(){
+    public void verifyConfigFolder(){
         try {
-            if (!getDataFolder().exists()) { getDataFolder().mkdirs(); }
+            if (!getDataFolder().exists()) {
+                getDataFolder().mkdirs();
+            }
+
             File file = new File(getDataFolder(), "config.yml");
-            if (!file.exists()) { saveDefaultConfig(); }
-        } catch (Exception e) { e.printStackTrace(); }
+            if (!file.exists()) {
+                saveDefaultConfig();
+            }
+
+            for(String s : songs){
+                if (!new File(getDataFolder(), s + ".nbs").exists()) {
+                    saveResource(s + ".nbs", false);
+                }
+            }
+        }
+        catch (Exception e) { e.printStackTrace(); }
     }
 
     @Override
@@ -117,7 +129,7 @@ public class Christmas extends JavaPlugin implements Listener {
                 }
 
                 if(args[1].equalsIgnoreCase("stop")){
-                    if(sp == null) { sp = new RadioSongPlayer(NBSDecoder.parse(new File(getDataFolder(), "empty.nbs"))); }
+                    if(sp == null) { sp = new RadioSongPlayer(NBSDecoder.parse(new File(getDataFolder(), "jingle_bell.nbs"))); }
                     sp.destroy(SongDestroyingEvent.StopCause.MANUALLY_DESTROYED);
                 }
 
